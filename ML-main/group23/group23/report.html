@@ -1,0 +1,210 @@
+<html>
+<style>
+code {
+  font-family: Consolas,"courier new";
+  color: red;
+  background-color: ##181c20;
+  padding: 2px;
+  font-size: 105%;
+}
+</style>
+<style>
+code2 {
+  font-family: Consolas,"courier new";
+  color: rgb(130, 206, 130);
+  background-color: ##181c20;
+  padding: 2px;
+  font-size: 100%;
+}
+</style>
+    <head>
+        <link href="mystyle.css" rel="stylesheet" type="text/css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    
+    <body style="color:white; background-color:#181c20">
+        <div class="container">     
+            
+			<h2> Procedural Genration of Portal2 levels using DCGANs </h2>
+			<h3>Group 23 report:</h3> 
+<hr />
+<center>
+<p ><a style="color:white;" href="index.html">Home</a><a style="color:white;"href="proposal.html">Project Proposal</a><a style="color:white;"href="milestone.html">Project Milestone</a></p>
+</center>
+<hr />
+<h2>Original Goal</h2>
+	<p align="justify">
+		To create a DCGAN algorithm that is trained on a large level corpus to produce simple working levels with interesting structures.
+	</p>
+
+<h2>Why Deep Convolutional Generative Adversarial Networks (DCGANs)?</h2> 
+	<p align="justify">
+		GAN architecture was first developed in 2014 in a paper titled "Generative Adversarial Networks" by Ian Goodfellow et al. A more structured approach called Deep Convolutional Generative Adversarial Network (DCGAN)
+		was later developed by Alec Radford et al. in 2015 in the paper titled "Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks". The architecture is useful in exploring the latent
+		space of a distribution and produce novel example that lie in that same distribution. DCGANs have been very succesful in generative applications.<br>
+		Assuming that level structures also form a cohorent distribution in latent space, DCGANs should be able to approximate this distribution to create new levels.
+		This has been shown to work succefully on 2D examples like Mario. 	
+	</p>
+<h2>Data</h2>
+	<p align="justify">
+		The Portal 2 has a community workshop where players can upload mods, visual enhancements and new levels for the game. The workshop has a very large corpus of levels for the game. This is one of the reasons why this game
+		 was considered to be ideal for this project.<br>
+		 However, the translation of the levels available on the workshop to a usable form proved too difficult. Instead a new much smaller corpus was created by hand, to increase the effectivity of a smaller corpus, the dataset
+		  included rotations and reflections of the levels, resulting in 8 data points from 1 working level.<br>
+		  <img src="example level.jpg" alt="A DCGAN architecture with Generator and Discriminator" style="width:70%;height:auto;"><br>
+		  While the disadvantages of a smaller corpus are obvious, it lets us work on simple levels with homogenous size, making it easier for us to come up with a proof of concept.
+	</p>
+	 
+        	<center>
+		<img src="dcgan.png" alt="Reference architecture taken from the mario DCGANs paper" style="width:70%;height:auto;">
+		<figcaption>Reference architecture taken from the mario DCGANs paper</figcaption>
+		</center>
+	
+	<h2>The Model</h2>
+	<p align="justify">
+		The discriminator and generator parts of the model mirror each others' structure. The Convolution layers create abstract representaions of the input layer that condense down to a binary value in the discriminator.
+		In the generator a similar series of transposed convolutions is used to take a 128 dimension latent vector and create a (10,10,10,10) output level.<br>
+		This model is updated from our milestone presentation.<br>
+		</p>
+		<h3>excessive padding</h3>
+		<p align="justify">
+		We have reduced level sizes from 16x16x16 to 10x10x10 to reduce padding, excessive padding can be an issue as it just parameter size without any extra information
+		with 16 cubic levels we had upto 80% padding for some levels. A 10 cubed limit on level size vastly reduces padding percentage.
+	</p>
+		<h3>Deeper Network</h3>
+		<p align="justify">
+		The network was made deeper to encourage better characteristics in generated level.
+		</p>
+		<img src="model diagram.png" alt="A DCGAN architecture with Generator and Discriminator" style="width:70%;height:auto;">
+		<pre>
+			<code2>
+			Layer (type)                 Output Shape              Param #   
+			=================================================================
+			conv3d_3 (Conv3D)            (None, 10, 10, 10, 16)    4336      
+			_________________________________________________________________
+			leaky_re_lu_15 (LeakyReLU)   (None, 10, 10, 10, 16)    0         
+			_________________________________________________________________
+			conv3d_4 (Conv3D)            (None, 5, 5, 5, 32)       13856     
+			_________________________________________________________________
+			leaky_re_lu_16 (LeakyReLU)   (None, 5, 5, 5, 32)       0         
+			_________________________________________________________________
+			conv3d_5 (Conv3D)            (None, 3, 3, 3, 64)       55360     
+			_________________________________________________________________
+			leaky_re_lu_17 (LeakyReLU)   (None, 3, 3, 3, 64)       0         
+			_________________________________________________________________
+			global_max_pooling3d_1 (Glob (None, 64)                0         
+			_________________________________________________________________
+			dense_5 (Dense)              (None, 1)                 65        
+			=================================================================
+			Total params: 73,617
+			Trainable params: 73,617
+			Non-trainable params: 0
+			_________________________________________________________________
+			</code2>
+			</pre>
+
+			<pre>
+			<code2>
+			Model: "generator"
+			Layer (type)                 Output Shape              Param #   
+			=================================================================
+			dense_6 (Dense)              (None, 1728)              222912    
+			_________________________________________________________________
+			leaky_re_lu_18 (LeakyReLU)   (None, 1728)              0         
+			_________________________________________________________________
+			reshape_4 (Reshape)          (None, 3, 3, 3, 64)       0         
+			_________________________________________________________________
+			conv3d_transpose_12 (Conv3DT (None, 6, 6, 6, 32)       131104    
+			_________________________________________________________________
+			cropping3d_2 (Cropping3D)    (None, 5, 5, 5, 32)       0         
+			_________________________________________________________________
+			leaky_re_lu_19 (LeakyReLU)   (None, 5, 5, 5, 32)       0         
+			_________________________________________________________________
+			conv3d_transpose_13 (Conv3DT (None, 10, 10, 10, 16)    32784     
+			_________________________________________________________________
+			leaky_re_lu_20 (LeakyReLU)   (None, 10, 10, 10, 16)    0         
+			_________________________________________________________________
+			conv3d_transpose_14 (Conv3DT (None, 10, 10, 10, 10)    10250     
+			=================================================================
+			Total params: 397,050
+			Trainable params: 397,050
+			Non-trainable params: 0
+			_________________________________________________________________
+			</code2>
+				</pre>
+		<p align="justify">
+		Following the reference architecture as we reduce the number of dimensions in the layer we increase the number of channels.
+
+	</p>
+	
+<h2>Results.</h2>
+<center>
+	<img src="first level.jpg" alt="Reference architecture taken from the mario DCGANs paper" style="width:70%;height:auto;">
+	<figcaption>The very first level seen visually. 200 data points, batches of 10, 2 layer network, 100 epochs.</figcaption>
+</center>
+<center>
+	<img src="testfile5.jpg" alt="Reference architecture taken from the mario DCGANs paper" style="width:70%;height:auto;">
+	<figcaption>Another example. 308 data points, batches of 10, 2 layer network, 100 epochs.</figcaption>
+</center>
+<center>
+	<img src="testfile6.jpg" alt="Reference architecture taken from the mario DCGANs paper" style="width:70%;height:auto;">
+	<figcaption> 308 data points, batches of 10, 3 layer network, 50 epochs.</figcaption>
+</center>
+<center>
+	<img src="testfile7.jpg" alt="Reference architecture taken from the mario DCGANs paper" style="width:70%;height:auto;">
+	<figcaption> 308 data points, batches of 10, 3 layer network, 40 epochs.</figcaption>
+</center>
+<p align="justify">
+	This last level is the most interesting level so far. The level created two separate chambers connected by a small passage. Such a structure could make for a very interesting puzzle design. There is actually a level in 
+	the training set set that has a similar characteristic.
+</p>
+<center>
+	<img src="similar chamber.jpg" alt="Reference architecture taken from the mario DCGANs paper" style="width:70%;height:auto;">
+	<figcaption> A level with two separate chambers and a passage between them.</figcaption>
+</center>
+<p align="justify">
+	But the orientation of the level, the size of the chambers and the location of the passage is very different. Which means that the algorithm is capable of producing some good results but in it's current state the number
+	 of bad noisy results is much greater than good results.
+</p>
+
+<h2>Current problems</h2>
+<h3>Buggy Item Placement</h3>
+<p align="justify">
+	The item placement to create the actual puzzle is very flawed. Items appear inside solid walls, there are multiple entry and exit doors. The hope was that the algorithm will be able to learn that each level has only one entry door
+	which must be placed on a flat wall. None of the versions of the algorithm produced sensible item placement, this was a concern in the Mario DCGAN paper as well. The powerups in a mario level are rare and very scattered and are almost
+	 seen as outliers by the algorithm. To get around this issue a convolution was applied to all such elements of the game, to improve their significance during training. This solution can be explored in this case aswell.<br>
+	 Another suggestion is to divide the level generation into 3 parts.
+	 <ol>
+		 <li>Geometry generation</li>
+		 <li>Item placement</li>
+		 <li>Connections</li>
+	 </ol>
+</p>
+<h3>Lack of Data</h3>
+<p align="justify">
+	The lack of data points is an obvious problem. We attempted to solve this by reaching out to the community and asking for some level files. But, as we should have expected, for a 9 year old game, the community is not very active and
+	the response was very underwhelming.
+</p>
+
+<h2>Conclusion</h2>
+<p align="justify">
+	As we saw, the project shows promise but there is still a very long way to go, the original scope of the project was far too great. As this project went along the problem was reduced to just producing interesting level geometry
+	in which a puzzle could be made.
+</p>
+<h2>Code</h2>
+<a style="color:white;"href="https://github.com/kowmahajan2/ML">Link to the Github repository</a>
+
+
+<h2>References:</h2>
+            
+        <ol>
+            <li> Volz et. al., “Evolving Mario Levels in the Latent Space of a Deep Convolutional Generative Adversarial Network”, in Proceedings of the Genetic and Evolutionary Computation Conference, pp. 221-228 (2018)</li><br> 
+            <li> Giacomello et. al., “DOOM Level Generation using Generative Adversarial Networks”, 2018 IEEE Games, Entertainment, Media Conference (GEM), pp. 316-323, (2018)</li><br>
+        <li> Irfan et. al., “Evolving Levels for General Games Using Deep Convolutional Generative Adversarial Networks”, in 11th Computer Science and Electronic Engineering (CEEC), pp. 96-101 (2019)</li><br> 
+        <li> Juraska et. al., “ViGGO: A Video Game Corpus for Data-To-Text Generation in Open-Domain Conversation”, in Proceedings of the 12th International Conference on Natural Language Generation, pp. 164-172, (2019)</li><br>
+     <li><a style="color:white;"href="https://machinelearningmastery.com/practical-guide-to-gan-failure-modes/">How to Identify and Diagnose GAN Failure Modes</a></li><br>
+	 <li><a style="color:white;"href="https://towardsdatascience.com/why-do-gans-need-so-much-noise-1eae6c0fb177">Why Do GANs Need So Much Noise?</a></li><br>
+	 <li><a style="color:white;"href="https://keras.io/examples/generative/dcgan_overriding_train_step/">DCGANs reference code</a></li><br>
+         </ol>
+
+</html>
